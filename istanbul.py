@@ -43,7 +43,8 @@ for r in range(rows):
         i = r*columns + c
         board[r,c] = tile[i]
 
-print '\n----Original Board----\n'
+print '\n'
+print '----Original Board----\n'
 print board
 print '\n'
 
@@ -82,7 +83,7 @@ board[tea[0],tea[1]] = aux
 #print '\n'
 
 if game < 3:
-    if fountain[0] < 1 or fountain[0] > rows-1 or fountain[1] < 1 \
+    if fountain[0] < 1 or fountain[0] > rows-2 or fountain[1] < 1 \
       or fountain[1] > columns-2:
         r = np.random.choice(np.arange(1,rows-1, dtype=int))
         c = np.random.choice(np.arange(1,columns-1, dtype=int))
@@ -93,7 +94,7 @@ if game < 3:
         board[r,c] = 7
         board[fountain[0],fountain[1]] = aux 
 
-print '\n----Final Board----\n'
+print '----Final Board----\n'
 print board
 print '\n'
 
