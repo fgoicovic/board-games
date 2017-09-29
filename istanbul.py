@@ -6,9 +6,9 @@ import sys
 def print_opts():
     print 'The valid options are:'
     print '\t0: Base Game'
-    print '\t1: Letters & Seals expansion'
-    print '\t2: Mocha & Baksheesh expansion'
-    print '\t3: Great Bazaar variant (not implemented yet)\n'
+    print '\t1: Mocha & Baksheesh expansion'
+    print '\t2: Letters & Seals expansion'
+    print '\t3: Great Bazaar variant\n'
     return
 
 if len(sys.argv) < 2:
@@ -37,6 +37,11 @@ board = np.zeros((rows, columns), dtype=int)
 
 tile = np.random.choice(np.arange(1,ntiles+1, dtype=int), size=ntiles, 
                         replace=False)
+
+if game == 2:
+    ig = np.where(tile > 16)[0]
+    for i in ig:
+        tile[i] += 4
 
 for r in range(rows):
     for c in range(columns):
