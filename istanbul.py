@@ -2,7 +2,7 @@
 
 from numpy.random import choice
 from numpy import where,arange,fabs,zeros,array
-import sys
+from sys import argv,exit
 
 def print_opts():
     print('\nThe available options are:')
@@ -11,12 +11,15 @@ def print_opts():
     print('\t2: Letters & Seals expansion')
     print('\t3: Great Bazaar variant\n')
 
+
 def exchange_tiles(board, pos1, pos2):
     r1,c1 = pos1
     r2,c2 = pos2
     aux = board[r1,c1]
     board[r1,c1] = board[r2,c2]
     board[r2,c2] = aux 
+
+
 
 def deploy_random_board(game):
     if game == 0:
@@ -30,7 +33,7 @@ def deploy_random_board(game):
     else:
         print('Invalid option %d.'%(game))
         print_opts()
-        sys.exit()
+        exit()
     
     ntiles = rows * columns
     board = zeros((rows, columns), dtype=int)
@@ -49,60 +52,72 @@ def deploy_random_board(game):
             i = r*columns + c
             board[r,c] = tile[i]
     
-    return rows, columns, board
+    return board
 
 
-if __name__ == "__main__":
 
-    if len(sys.argv) < 2:
-        print('Please specify which game.')
-        print_opts()
-        sys.exit()
-    
-    game = int(sys.argv[1])
-    
-    rows,columns,board = deploy_random_board(game)
-    
-    print('\n----Original Board----\n')
-    print(board)
-    
+def validate_board_fountain(game,board):
+
+    rows,columns = board.shape 
+
     fountain = array(where(board==7)).reshape(2)
     
     # for great bazaar variant the Fountain is at the center 
+    # for the rest, it is at the center tiles
     if game == 3:
         if fountain[0] != 2 or fountain[1] != 2:
             exchange_tiles(board,(2,2),(fountain[0],fountain[1]))
-    
-    # black market and tea house positions
-    black = array(where(board==8)).reshape(2)
-    tea = array(where(board==9)).reshape(2)
-    
-    r,c = tea[0],tea[1]
-    dist = fabs(black[0]-r) + fabs(black[1]-c)
-    if game > 0:
-        while dist < 3 or r==black[0] or c==black[1]:
-            r = choice(arange(0,rows, dtype=int))
-            c = choice(arange(0,columns, dtype=int))
-            if game == 3 and r==2 and c==2:
-                continue
-            dist = fabs(black[0]-r) + fabs(black[1]-c)
     else:
-        while dist < 3:
-            r = choice(arange(0,rows, dtype=int))
-            c = choice(arange(0,columns, dtype=int))
-            dist = fabs(black[0]-r) + fabs(black[1]-c)
-    exchange_tiles(board,(r,c),(tea[0],tea[1]))
-    
-    # All games should have the Fountain in the center tiles
-    if game < 3:
         if fountain[0] < 1 or fountain[0] > rows-2 or fountain[1] < 1 \
           or fountain[1] > columns-2:
             r = choice(arange(1,rows-1, dtype=int))
             c = choice(arange(1,columns-1, dtype=int))
-            while board[r,c]==8 or board[r,c]==9:
-                r = choice(arange(1,rows-1, dtype=int))
-                c = choice(arange(1,columns-1, dtype=int))
             exchange_tiles(board,(r,c),(fountain[0],fountain[1]))
+
+
+def validate_board_blackmarket_teahouse(game,board):
+
+    rows,columns = board.shape 
+
+    fountain = array(where(board==7)).reshape(2)
+    black = array(where(board==8)).reshape(2)
+    tea = array(where(board==9)).reshape(2)
+    
+    # randomize position of tea house until conditions
+    # are satisfied
+    r,c = tea[0],tea[1]
+    dist = fabs(black[0]-r) + fabs(black[1]-c)
+    while dist < 3:
+        r = choice(arange(0,rows, dtype=int))
+        c = choice(arange(0,columns, dtype=int))
+        if game > 0 and (r==black[0] or c==black[1]):
+            continue
+        if r==fountain[0] and c==fountain[1]:
+            continue
+        dist = fabs(black[0]-r) + fabs(black[1]-c)
+        
+    exchange_tiles(board,(r,c),(tea[0],tea[1]))
+
+
+
+if __name__ == "__main__":
+
+    if len(argv) < 2:
+        print('Please specify which game.')
+        print_opts()
+        exit()
+    
+    game = int(argv[1])
+    
+    board = deploy_random_board(game)
+    
+    print('\n----Original Board----\n')
+    print(board)
+
+
+    validate_board_fountain(game,board)
+
+    validate_board_blackmarket_teahouse(game,board)
     
     print('\n----Final Board----\n')
     print(board)
