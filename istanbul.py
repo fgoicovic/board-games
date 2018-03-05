@@ -81,17 +81,17 @@ def validate_board_blackmarket_teahouse(game,board):
 
     # randomize position of tea house until conditions
     # are satisfied
-    r,c = tea[0],tea[1]
+    r, c = tea[0], tea[1]
     dist = fabs(black[0]-r) + fabs(black[1]-c)
 
     # only for the base game the Tea House and Tea House
     # can be on the same row or column
     if game == 0:
         while dist < 3:
-            dist = relocate_tea_house(board)
+            dist, r, c = relocate_tea_house(board)
     else:
         while dist < 3 or (r==black[0] or c==black[1]):
-            dist = relocate_tea_house(board)
+            dist, r, c = relocate_tea_house(board)
 
     exchange_tiles(board,(r,c),(tea[0],tea[1]))
 
@@ -109,9 +109,9 @@ def relocate_tea_house(board):
 
     # we do not allow Tea House to replace the Fountain
     if r==fountain[0] and c==fountain[1]:
-        return 0
+        return 0,r,c
 
-    return fabs(black[0]-r) + fabs(black[1]-c)
+    return fabs(black[0]-r) + fabs(black[1]-c),r,c
 
 
 if __name__ == "__main__":
