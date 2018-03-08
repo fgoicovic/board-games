@@ -113,6 +113,11 @@ def relocate_tea_house(board):
 
     return fabs(black[0]-r) + fabs(black[1]-c)
 
+def show_board(board):
+    rows,columns = board.shape
+
+    for r in range(rows):
+        print('{:4d}'.format(c) for c in board[r,:])
 
 if __name__ == "__main__":
 
@@ -134,4 +139,6 @@ if __name__ == "__main__":
 
     print('\n----Final Board----\n')
     print(board)
+
+    show_board(board)
 
