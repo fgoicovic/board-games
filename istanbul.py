@@ -113,11 +113,17 @@ def relocate_tea_house(board):
 
     return fabs(black[0]-r) + fabs(black[1]-c),r,c
 
+
 def show_board(board):
     rows,columns = board.shape
 
     for r in range(rows):
-        print('{:4d}'.format(c) for c in board[r,:])
+        line = ''
+        for b in board[r,:]:
+            line += '{:5d}'.format(b)
+        print(line)
+    print('')
+
 
 if __name__ == "__main__":
 
@@ -129,16 +135,17 @@ if __name__ == "__main__":
     game = int(argv[1])
 
     board = deploy_random_board(game)
+    rows,columns = board.shape
+    width = 5*columns
 
-    print('\n----Original Board----\n')
-    print(board)
+    print('{:^{width}}\n'.format('Original Board', width=width))
+    show_board(board)
 
     validate_board_fountain(game,board)
 
     validate_board_blackmarket_teahouse(game,board)
 
-    print('\n----Final Board----\n')
-    print(board)
-
+    print('{:^{width}}\n'.format('Final Board', width=width))
     show_board(board)
+
 
