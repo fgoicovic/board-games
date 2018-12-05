@@ -23,9 +23,7 @@ def exchange_tiles(board, pos1, pos2):
 def deploy_random_board(game):
     if game == 0:
         rows, columns = 4,4
-    elif game == 1:
-        rows, columns = 4,5
-    elif game == 2:
+    elif game == 1 or game == 2:
         rows, columns = 4,5
     elif game == 3:
         rows, columns = 5,5
@@ -118,10 +116,16 @@ def show_board(board):
     rows,columns = board.shape
 
     for r in range(rows):
+        hline = ''
         line = ''
         for b in board[r,:]:
-            line += '{:5d}'.format(b)
+            hline += '-----'
+            line += '| {:>2d} '.format(b)
+        hline += '-'
+        line += '|'
+        print(hline)
         print(line)
+    print(hline)
     print('')
 
 
@@ -132,20 +136,24 @@ if __name__ == "__main__":
         print_opts()
         exit()
 
-    game = int(argv[1])
+    try:
+        game = int(argv[1])
+    except:
+        print("Unable to convert option '%s' to integer."%argv[1])
+        exit()
 
     board = deploy_random_board(game)
     rows,columns = board.shape
     width = 5*columns
 
-    print('{:^{width}}\n'.format('Original Board', width=width))
+    print('\n{:^{width}}'.format('Original Board', width=width))
     show_board(board)
 
     validate_board_fountain(game,board)
 
     validate_board_blackmarket_teahouse(game,board)
 
-    print('{:^{width}}\n'.format('Final Board', width=width))
+    print('{:^{width}}'.format('Final Board', width=width))
     show_board(board)
 
 
