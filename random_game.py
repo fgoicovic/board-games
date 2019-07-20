@@ -28,6 +28,18 @@ class OptionsParser:
                             help    = "Name of collection file as exported from BGG",
                             default = "collection.csv")
 
+        self.parser.add_argument("--nosaved",
+                                 dest   = "nosaved",
+                                 help   = "Ignore list of saved games",
+                                 action = "store_true"
+                                )
+
+        self.parser.add_argument("--short",
+                                 dest   = "short",
+                                 help   = "Select among games of less than 1 hr.",
+                                 action = "store_true"
+                                )
+
     def get_args(self):
         return self.parser.parse_args()
 
@@ -71,11 +83,6 @@ if __name__ == "__main__":
 
     numplayers = args.num
 
-#    with os.scandir('./') as it:
-#        for entry in it:
-#            if not entry.name.startswith('.') and entry.is_file():
-#                print(from_file(entry.name, mime=True))
-
     file_name = args.col
     outname = file_name.replace('.csv', '.txt')
     outname = '{}pl_'.format(numplayers) + outname
@@ -90,6 +97,8 @@ if __name__ == "__main__":
     recplayers = N*[[0],]
     bstplayers = N*[[0],]
     players = np.zeros((N,2), dtype=np.int8)
+    playtime = np.zeros(N, dtype=np.int16)
+    cid = np.zeros(N, dtype=np.int32)
     get_idx = lambda x, xs: [i for (y,i) in zip(xs, range(len(xs))) if x in y]
     with open(file_name) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -103,18 +112,20 @@ if __name__ == "__main__":
                 imax = get_idx('max', row[iplayer])
                 irec = get_idx('rec', row[iplayer])
                 ibst = get_idx('best', row[iplayer])
-                itime = get_idx('time', row)
-                iid = get_idx('id', row)
+                itime = get_idx('playingtime', row)
+                iid = get_idx('collid', row)
             else:
                 name[line-1] = row[0]
                 gtype[line-1] = row[itype[0]]
                 row_pl = row[iplayer]
                 players[line-1, 0] = int(row_pl[imin])
                 players[line-1, 1] = int(row_pl[imax])
+                cid[line-1] = int(row[iid])
+                playtime[line-1] = int(row[itime[0]])
                 if row_pl[irec][0]:
-                    recplayers[line-1] = list(map(int, row_pl[irec][0].split(',')))
+                    recplayers[line-1] = list(map(int, row_pl[irec[0]].split(',')))
                 if row_pl[ibst][0]:
-                    bstplayers[line-1] = list(map(int, row_pl[ibst][0].split(',')))
+                    bstplayers[line-1] = list(map(int, row_pl[ibst[0]].split(',')))
             line += 1
 
     gtype = np.array(gtype)
@@ -129,52 +140,74 @@ if __name__ == "__main__":
     bstpl_bg = bstplayers[~idx]
     recpl_bg = recplayers[~idx]
     bstpl_xp = bstplayers[idx]
+    time_bg = playtime[~idx]
+    time_xp = playtime[idx]
     for b,bg in enumerate(basegame):
         iexp = get_idx(bg, expansion)
-        #if len(iexp) > 0:
-        #    print("Game '{0}' has {1} expansion(s)".format(bg, len(iexp)))
-        #    print(np.min(players_xp[iexp,0]))
-        #    print(np.max(players_xp[iexp,1]))
 
     played = []
-    if os.path.isfile(outname):
-        f = open(outname, "r")
-        played = [i.replace('\n', '') for i in f.readlines()]
-        f.close()
+    if not args.nosaved:
+        if os.path.isfile(outname):
+            f = open(outname, "r")
+            played = [i.replace('\n', '') for i in f.readlines()]
+            f.close()
+
+    if args.short:
+        idx = (time_bg < 60)
+        basegame = basegame[idx]
+        players_bg = players_bg[idx]
+        bstpl_bg = bstpl_bg[idx]
+        recpl_bg = recpl_bg[idx]
 
     if numplayers > 0:
         idx = (players_bg[:,0] <= numplayers) & (players_bg[:,1] >= numplayers)
         basegame = basegame[idx]
-        ng = len(basegame)
-        p = np.full(ng, 0.)
+        players_bg = players_bg[idx]
+        bstpl_bg = bstpl_bg[idx]
+        recpl_bg = recpl_bg[idx]
 
-        for i in range(ng):
-            if basegame[i] in played:
-                p[i] = 0.
-                print(f"It appears you already have played '{basegame[i]}'. Skipping it.")
-                continue
+    ng = len(basegame)
+    p = np.full(ng, 1.)
 
-            if numplayers in bstpl_bg[idx][i]:
-                p[i] = 3.
-                print(f"Number of players is best for {basegame[i]}")
-            elif numplayers in recpl_bg[idx][i]:
-                p[i] = 1.
-                print(f"Number of players is recommended for {basegame[i]}")
+    best = []
+    reco = []
+    ib = 0
+    for bst, rec, bg in zip(bstpl_bg, recpl_bg, basegame):
+        if numplayers in bst:
+            p[ib] = 3.
+            best.append(bg)
+        elif numplayers in rec:
+            p[ib] = 1.
+            reco.append(bg)
+        else:
+            p[ib] = 0.
+        ib += 1
 
-        if np.sum(p) == 0.:
-            print("It appears you have played all posible games with this number of\
-                   players.")
-            reset = query_yes_no("Do you wish to reset the list of played games?")
-            if not reset:
-                print("Nothing to do here. Exiting.")
-                sys.exit()
-            else:
-                newoutname = "old_"+outname
-                os.system(f"mv {outname} {newoutname}")
-                sys.exit()
+    if len(best) > 0:
+        print(f"\nNumber of players ({numplayers}) is best for:")
+        print(best)
+    if len(reco) > 0:
+        print(f"\nNumber of players ({numplayers}) is recommended for:")
+        print(reco)
 
-    else:
-        p = np.full(basegame.shape, 1.)
+    if len(played) > 0:
+        print("")
+        for ib, bg in enumerate(basegame):
+            if bg in played:
+                p[ib] = 0.
+                print(f"It appears you already have played '{bg}'. Skipping it.")
+
+    if np.sum(p) == 0.:
+        print("You have played all posible games with this number of"+\
+               " players.")
+        reset = query_yes_no("Do you wish to reset the list of played games?")
+        if not reset:
+            print("Nothing to do here. Exiting.")
+            sys.exit()
+        else:
+            newoutname = "old_"+outname
+            os.system(f"mv {outname} {newoutname}")
+            sys.exit()
 
     p /= np.sum(p)
 
