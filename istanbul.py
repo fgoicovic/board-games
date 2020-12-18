@@ -158,7 +158,7 @@ if __name__ == "__main__":
         exit()
 
     # first board is completely random
-    game = argv[1]
+    game = int(argv[1])
     board = deploy_random_board(game)
     rows, columns = board.shape
 
@@ -166,10 +166,9 @@ if __name__ == "__main__":
     print('\n{:^{width}}'.format('Original Board', width=width))
     show_board(board)
 
-    game = int(game)
     # we check the position of the fountain, and change it if necessary
     board = validate_board_fountain(game,board)
-    # we check the position of the fountain, and change them if necessary
+    # we check the position of the black market and tea house, and change them if necessary
     board = validate_board_blackmarket_teahouse(game,board)
 
     print('{:^{width}}'.format('Final Board', width=width))
